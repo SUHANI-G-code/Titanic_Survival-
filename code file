@@ -1,0 +1,109 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+df= pd.read_csv('Titanic.csv')
+print('dataset loaded sucessfuly!')
+print("FIRST 5 ROWS")
+print(df.head())
+
+print("DATA INFO")
+df.info()
+
+print("DATA SUMMARY STATISTICS")
+print(df.describe())
+print("Missing values per column before cleaning:")
+print(df.isnull().sum())
+df['Age'] = df['Age'].fillna(df['Age'].median())
+
+# Drop 'Cabin' column because it has too many missing values (>70%)
+if 'Cabin' in df.columns:
+  df.drop(columns=['Cabin'], inplace=True)
+
+# Verify cleaning
+print("\nMissing values per column after cleaning:")
+print(df.isnull().sum())
+# Calculate survival counts
+survival_counts = df['Survived'].value_counts()
+
+# Plotting
+plt.figure(figsize=(6, 6))
+plt.pie(survival_counts, labels=['Died', 'Survived'], autopct='%1.1f%%', colors=['blue', 'red'],explode= [0,0.1],shadow=True)
+plt.title('Overall Titanic Survival Rate')
+plt.show()
+# Group data by Sex and Survived status
+gender_survival = df.groupby(['Sex', 'Survived']).size().unstack()
+
+# Plotting
+gender_survival.plot(kind='bar', stacked=True, color=['red', 'blue'], figsize=(8, 6))
+plt.title('Survival Count by Gender')
+plt.xlabel('Gender')
+plt.ylabel('Passenger Count')
+plt.legend(['Died', 'Survived'])
+plt.grid(axis='y', linestyle='--', alpha=0.5)
+plt.show()
+plt.figure(figsize=(9, 5))
+plt.hist(df['Age'], bins=20, color='purple', edgecolor='black', alpha=0.8)
+plt.title('Age Distribution of Titanic Passengers')
+plt.xlabel('Age')
+plt.ylabel('Frequency')
+plt.grid(axis='y', linestyle='--', alpha=0.3)
+plt.show()
+fig, ax = plt.subplots(subplot_kw={'projection': '3d'}, figsize=(10, 6))
+
+# Map named colors to classes for clarity
+colors = {1: 'gold', 2: 'silver', 3: 'chocolate'}
+
+for pclass, group in df.groupby('Pclass'):
+    # Pass three dimensions: Age (X), Fare (Y), and Pclass (Z)
+    ax.scatter(
+        group['Age'], 
+        group['Fare'], 
+        group['Pclass'], 
+        label=f'Class {pclass}', 
+        color=colors[pclass], 
+        alpha=0.6
+    )
+
+# Set the title and labels using the 3D axes object (ax)
+ax.set_title('Passenger Age vs. Fare Paid (Grouped by Class in 3D)')
+ax.set_xlabel('Age')
+ax.set_ylabel('Fare (in pounds)')
+ax.set_zlabel('Passenger Class')
+
+# Add legend and grid
+ax.legend(title='Passenger Class')
+ax.grid(True, linestyle=':', alpha=0.6)
+
+# Save the visualization as an image
+plt.savefig('titanic_3d_scatter.png')
+fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(22, 6))
+
+bubble_sizes = (4 - df['Pclass']) * 50  
+scatter = ax1.scatter(df['Age'], df['Fare'], s=bubble_sizes, color='teal',alpha=0.4, edgecolors='darkgreen')
+ax1.set_title('Bubble Chart: Age vs Fare (Size = Ticket Class)')
+ax1.set_xlabel('Age')
+ax1.set_ylabel('Fare (in pounds)')
+ax1.grid(True, linestyle=':', alpha=0.6)
+
+
+age_fare_trend = df.groupby('Age')['Fare'].mean().sort_index()
+ax2.plot(age_fare_trend.index, age_fare_trend.values, color='crimson', linewidth=2, linestyle='-')
+ax2.set_title('Line Chart: Average Fare Trend by Age')
+ax2.set_xlabel('Age')
+ax2.set_ylabel('Average Fare')
+ax2.grid(True, linestyle='--', alpha=0.4)
+
+
+class_survival = df.groupby(['Pclass', 'Survived']).size().unstack()
+class_survival.plot(kind='bar',stacked=True, color=['coral', 'mediumseagreen'], ax=ax3)
+ax3.set_title('Stacked Bar Chart: Survival Count by Passenger Class')
+ax3.set_xlabel('Passenger Class')
+ax3.set_ylabel('Passenger Count')
+ax3.set_xticklabels(['1st Class', '2nd Class', '3rd Class'], rotation=0)
+ax3.legend(['Died', 'Survived'])
+ax3.grid(axis='y', linestyle='--', alpha=0.5)
+
+# Tight layout automatically adjusts subplots to fit cleanly within the figure
+plt.tight_layout()
+fig.savefig('titanic_three_charts_dashboard.png')
+plt.show()
